@@ -14,5 +14,5 @@
 ### התקנה:
 ```bash
 git clone <repository-url>
-cd elementary-math-api
+cd chat-613-api
 pip install -r requirements.txt
