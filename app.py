@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, redirect
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
@@ -83,69 +83,84 @@ def api_docs():
             }
         }
     })
-from flask import Response
 
-@app.route('/api/docs/html', methods=['GET'])
+@app.route('/api/docs/html', methods=['GET', 'POST'])
 def api_docs_html():
-    html_content = """
+    answer = ''
+    question = ''
+    if request.method == 'POST':
+        question = request.form.get('question', '')
+        if question:
+            try:
+                answer = get_gpt_response(question)
+            except Exception as e:
+                answer = f"שגיאה: {e}"
+
+    html_content = f"""
     <!DOCTYPE html>
     <html lang="he">
     <head>
         <meta charset="UTF-8">
-        <title>תיעוד ה-API</title>
+        <title>📘 תיעוד ונסיון API</title>
         <style>
-            body { font-family: Arial, sans-serif; direction: rtl; background-color: #f9f9f9; padding: 20px; }
-            h1 { color: #333; }
-            .endpoint { margin-bottom: 30px; padding: 15px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-            .endpoint h2 { margin: 0; color: #0056b3; }
-            .endpoint p, .endpoint pre { margin: 10px 0; }
-            pre { background: #f1f1f1; padding: 10px; border-radius: 5px; direction: ltr; overflow-x: auto; }
+            body {{ font-family: Arial, sans-serif; direction: rtl; background-color: #f9f9f9; padding: 20px; }}
+            h1 {{ color: #333; }}
+            .section {{ margin-bottom: 40px; }}
+            .form-container {{ background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
+            input[type=text] {{ width: 70%; padding: 10px; margin-bottom: 10px; }}
+            button {{ padding: 10px 15px; }}
+            .answer-box {{ background: #f1f1f1; padding: 15px; border-radius: 8px; }}
+            .endpoint {{ margin-top: 30px; background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
+            pre {{ background: #f8f8f8; padding: 10px; border-radius: 5px; direction: ltr; overflow-x: auto; }}
         </style>
     </head>
     <body>
-        <h1>📘 תיעוד ה-API - מתמטיקה לבית ספר יסודי</h1>
-
-        <div class="endpoint">
-            <h2>GET /api/domain</h2>
-            <p>מתאר את תחום הפעילות של ה-API.</p>
-            <p><strong>URL:</strong> <code>/api/domain</code></p>
-            <p><strong>תגובה לדוגמה:</strong></p>
-            <pre>{
-    "domain": "הצ'אט מתמקד במתמטיקה לתלמידי בית ספר יסודי בלבד."
-}</pre>
+        <div class="section form-container">
+            <h1>🧮 התנסות חיה - שאל שאלה במתמטיקה</h1>
+            <form method="post">
+                <input type="text" name="question" placeholder="הקלידו שאלה כאן..." required>
+                <button type="submit">שלח</button>
+            </form>
+            {f"<div class='answer-box'><strong>שאלה:</strong> {question}<br><strong>תשובה:</strong> {answer}</div>" if question else ""}
         </div>
 
-        <div class="endpoint">
-            <h2>POST /api/ask</h2>
-            <p>שולח שאלה ומחזיר תשובה אם היא רלוונטית למתמטיקה לכיתות יסוד.</p>
-            <p><strong>URL:</strong> <code>/api/ask</code></p>
-            <p><strong>פרמטרים בגוף הבקשה (JSON):</strong></p>
-            <pre>{
+        <div class="section">
+            <h1>📘 תיעוד ה־API</h1>
+
+            <div class="endpoint">
+                <h2>GET /api/domain</h2>
+                <p>מתאר את תחום הפעילות של ה־API.</p>
+                <pre>{{
+    "domain": "הצ'אט מתמקד במתמטיקה לתלמידי בית ספר יסודי בלבד."
+}}</pre>
+            </div>
+
+            <div class="endpoint">
+                <h2>POST /api/ask</h2>
+                <p>שולח שאלה ומחזיר תשובה.</p>
+                <pre>{{
     "question": "כמה זה 8 כפול 7?"
-}</pre>
-            <p><strong>תגובה לדוגמה:</strong></p>
-            <pre>{
+}}</pre>
+                <p><strong>תגובה לדוגמה:</strong></p>
+                <pre>{{
     "question": "כמה זה 8 כפול 7?",
     "answer": "שאלה מצוינת על מתמטיקה יסודית: כמה זה 8 כפול 7?.\\nפתרון: (תשובה לדוגמה)"
-}</pre>
-        </div>
+}}</pre>
+            </div>
 
-        <div class="endpoint">
-            <h2>GET /api/docs</h2>
-            <p>מחזיר תיעוד בפורמט JSON.</p>
-            <p><strong>URL:</strong> <code>/api/docs</code></p>
-            <p><strong>תגובה לדוגמה:</strong> אובייקט JSON עם רשימת נקודות הקצה.</p>
-        </div>
-
-        <div class="endpoint">
-            <h2>GET /api/docs/html</h2>
-            <p>מציג תיעוד זהה ב-HTML.</p>
-            <p><strong>URL:</strong> <code>/api/docs/html</code></p>
+            <div class="endpoint">
+                <h2>GET /api/docs</h2>
+                <p>מחזיר את תיעוד ה־API בפורמט JSON.</p>
+            </div>
         </div>
     </body>
     </html>
     """
     return Response(html_content, content_type='text/html; charset=utf-8')
+@app.route('/')
+def redirect_to_docs():
+    return redirect('/api/docs/html')
+
 
 
 if __name__ == '__main__':
