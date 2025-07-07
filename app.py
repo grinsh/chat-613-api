@@ -33,11 +33,13 @@ def get_mock_gpt_response(question):
 
 def get_gpt_response(question):
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "אתה מורה למתמטיקה לתלמידי בית ספר יסודי."},
-            {"role": "user", "content": "מה זה חיבור?"}
-        ])
+            {"role": "user", "content": question}
+        ],
+        max_tokens=30
+    )
     return(response.choices[0].message.content)
 
 # נקודת קצה לקבלת תיאור התחום
