@@ -1,11 +1,23 @@
-from flask import Flask, request, jsonify
-import re
-
+from flask import Flask, request, jsonify, Response
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
 from json_convert import make_utf8_json_response
+import httpx
 
+
+
+
+load_dotenv()  
+api_key = os.getenv("OPENAI_API_KEY")  
+client = OpenAI(
+    api_key=api_key,
+    http_client=httpx.Client(verify=False)
+)  # או השתמשי ב־os.getenv("OPENAI_API_KEY")
 
 
 app = Flask(__name__)
+
 
 # תיאור התחום
 DOMAIN_DESCRIPTION = "הצ'אט מתמקד במתמטיקה לתלמידי בית ספר יסודי בלבד."
@@ -19,6 +31,15 @@ def is_valid_math_question(question):
 def get_mock_gpt_response(question):
     return make_utf8_json_response(f"שאלה מצוינת על מתמטיקה יסודית: {question}.\nפתרון: (תשובה לדוגמה)")
 
+def get_gpt_response(question):
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "אתה מורה למתמטיקה לתלמידי בית ספר יסודי."},
+            {"role": "user", "content": "מה זה חיבור?"}
+        ])
+    return(response.choices[0].message.content)
+
 # נקודת קצה לקבלת תיאור התחום
 @app.route('/api/domain', methods=['GET'])
 def get_domain():
@@ -30,11 +51,11 @@ def ask_question():
     data = request.get_json()
     question = data.get("question", "")
 
-    if not is_valid_math_question(question):
-        return make_utf8_json_response({"error": "השאלה לא קשורה למתמטיקה לבית ספר יסודי"}), 400
+    # if not is_valid_math_question(question):
+    #     return make_utf8_json_response({"error": "השאלה לא קשורה למתמטיקה לבית ספר יסודי"}), 400
 
     # כאן אפשר לשלב קריאה אמיתית ל-GPT אם רוצים
-    answer = get_mock_gpt_response(question)
+    answer = get_gpt_response(question)
 
     return make_utf8_json_response({"question": question, "answer": answer})
 
