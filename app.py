@@ -35,7 +35,7 @@ def get_gpt_response(question):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "אתה מורה למתמטיקה לתלמידי בית ספר יסודי."},
+            {"role": "system", "content": "אסור לך באיסור חמור לענות על שאלות שלא קשורות באופן ישיר למתמטיקה יסודית, בנוסף אסור לך לתת דוגמאות שאינן מספריות.  את היכול רק לפרט דוגמאות מספריות ולא דוגמאות שקשורות למנושאים שאינם מתמטיקה"},
             {"role": "user", "content": question}
         ],
         max_tokens=30
